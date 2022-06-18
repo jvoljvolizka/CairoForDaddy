@@ -1,7 +1,15 @@
 %lang starknet
 
 from starkware.cairo.common.cairo_builtins import HashBuiltin
-from starkware.cairo.common.uint256 import Uint256
+from starkware.cairo.common.uint256 import (
+    Uint256,
+    uint256_add,
+    uint256_sub,
+    uint256_le,
+    uint256_lt,
+    uint256_eq,
+    uint256_check,
+)
 from starkware.starknet.common.syscalls import get_caller_address
 from starkware.cairo.common.math import assert_not_zero
 
@@ -23,19 +31,20 @@ end
 
 @constructor
 func constructor{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        daddy : felt, player : felt):
+    daddy : felt, player : felt
+):
     Daddy.write(daddy)
     Player.write(player)
     return ()
 end
 
 func start{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        target : Uint256, tries : Uint256):
+    target : Uint256, tries : Uint256
+):
     let (caller) = get_caller_address()
     let (daddy) = Daddy.read()
     assert_not_zero(caller)
-    assert_not_zero(target)
-    assert_not_zero(tries)
+
     with_attr error_message("Hey you are not my daddy! >_<"):
         assert caller = daddy
     end
@@ -65,23 +74,26 @@ func newDaddy{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}
 end
 
 func guess{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(
-        guessednum : Uint256) -> (res : felt):
+    guessednum : Uint256
+) -> (res : felt):
+    alloc_locals
     let (caller) = get_caller_address()
     let (player) = Player.read()
-    let (tries) = Tries.read()
-    let (target) = Target.read()
+    let (local tries) = Tries.read()
+    let (local target) = Target.read()
+
     with_attr error_message("Who the fuck are you ?"):
         assert caller = player
     end
     let (is_zero) = uint256_eq(tries, Uint256(0, 0))
 
     with_attr error_message("You lost already"):
-        assert_zero(is_zero)
+        assert is_zero = 0
     end
     let (is_eq) = uint256_eq(guessednum, target)
     if is_eq == 1:
         return (res=1)
     end
-    uint256_sub(target, Uint(1, 0))
+    uint256_sub(target, Uint256(1, 0))
     return (res=0)
 end
